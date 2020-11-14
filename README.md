@@ -20,11 +20,12 @@ Nginx setup configuration
 ```bash
 # Install requirements
 
+yum install -y git wget make mlocate epel-release vim;
+yum install -y gcc pcre2-devel pcre pcre-devel openssl openssl-libs openssl-devel;
+
 wget https://raw.githubusercontent.com/q3aql/ffmpeg-install/master/ffmpeg-install;
 chmod a+x ffmpeg-install;
 ./ffmpeg-install --install release;
-yum install -y git wget make mlocate epel-release;
-yum install -y gcc pcre2-devel pcre pcre-devel openssl openssl-libs openssl-devel;
 
 ## Clone the repository
 git clone https://github.com/arut/nginx-rtmp-module.git;
@@ -34,9 +35,10 @@ NGINX_VERSION=1.18.0;
 wget https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz;
 tar -xzf nginx-${NGINX_VERSION}.tar.gz;
 ## Configuring rtmp module
-cd nginx-${NGINX_VERSION} && ./configure --add-module=/root/nginx-rtmp-module/ --with-http_ssl_module;
+cd nginx-${NGINX_VERSION} && ./configure --add-module=/root/nginx-rtmp-module --with-http_ssl_module --with-debug --with-cc-opt="-Wimplicit-fallthrough=0";
 
-./configure --add-module=/root/nginx-rtmp-module --with-http_ssl_module --with-debug --with-cc-opt="-Wimplicit-fallthrough=0"
+make;
+make install;
 
 ## Validate nginx works
 /usr/local/nginx/sbin/nginx -v
