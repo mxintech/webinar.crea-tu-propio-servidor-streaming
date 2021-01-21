@@ -20,7 +20,7 @@ Nginx setup configuration
 ```bash
 # Install requirements
 
-yum install -y git wget make mlocate epel-release vim;
+yum install -y git wget make mlocate epel-release vim stunnel;
 yum install -y gcc pcre2-devel pcre pcre-devel openssl openssl-libs openssl-devel;
 
 wget https://raw.githubusercontent.com/q3aql/ffmpeg-install/master/ffmpeg-install;
@@ -68,8 +68,8 @@ use stunnel (stunnel)[https://sites.google.com/view/facebook-rtmp-to-rtmps/home]
 
 ```bash
 # Create the files
-tocuh /etc/default/stunnel4
-tocuh /etc/stunnel/stunnel.conf
+touch /etc/default/stunnel4
+touch /etc/stunnel/stunnel.conf
 
 Create the dirs
 - mkdir -p /var/run/stunnel/
@@ -107,6 +107,37 @@ Start and enable services
 sudo systemctl enable stunnel.service
 sudo systemctl restart stunnel.service
 ```
+
+### RTMP config
+```
+rtmp {
+  server {
+    listen 1935;
+    chunk_size 4096;
+
+    application taller-mxintech {
+      record off;
+      live on;
+      drop_idle_publisher 5s;
+      publish_notify on;
+
+      # Twitch
+      push rtmp://live.twitch.tv/app/XXXXXXXXXX;
+
+      # Youtube
+      push rtmp://a.rtmp.youtube.com/live2/XXXXXXXXXX;
+
+      # Facebook
+      push rtmp://127.0.0.1:1936/rtmp/XXXXXXXXXXXXXXXXX;
+
+      # Twitter
+      exec ffmpeg -i rtmp://localhost/taller-mxintech/$name -crf 30 -preset ultrafast -acodec aac -strict experimental -ar 44100 -ac 2 -b:a 64k -vcodec libx264 -x264-params keyint=60:no-scenecut=1 -r 30 -b:v 500k -s 960x540 -f flv rtmp://ca.pscp.tv:80/x/XXXXXXXXXXXXX;
+    }
+
+  }
+}
+```
+
 
 ### Troubleshooting <a name="troubleshooting" />
 
