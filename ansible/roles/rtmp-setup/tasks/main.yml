@@ -1,0 +1,140 @@
+---
+# tasks file for rtmp-setup
+
+- name: Update the system
+  yum:
+    name: '*'
+    state: latest
+
+- name: Install base packages
+  yum:
+    name: "{{ list_of_packages }}"
+    state: present
+
+- name: Download ffmpeg
+  get_url:
+    url: "{{ ffmpeg_url }}"
+    dest: /tmp/
+    mode: 0700
+    owner: root
+    group: root
+
+- name: Install ffmpeg
+  command: /tmp/ffmpeg-install --install release
+  register: output_install_ffmpeg
+
+- name: Clone nginx-rtmp-module
+  git:
+    repo: "{{ nginx_rtmp_module_url }}"
+    dest: /root/nginx-rtmp-module
+
+- name: Download and extract nginx tar
+  unarchive:
+    src: "{{ nginx_url }}{{ nginx_version }}.tar.gz"
+    dest: /root/
+    mode: 0744
+    owner: root
+    group: root
+    remote_src: yes
+
+- name: Add module to nginx
+  command:
+    cmd: "./configure --add-module=/root/nginx-rtmp-module/ --with-http_ssl_module"
+    chdir: "/root/nginx-{{ nginx_version }}"
+  register: output_add_nginx
+
+- name: Configure nginx module
+  command: 
+    cmd: './configure --add-module=/root/nginx-rtmp-module --with-http_ssl_module --with-debug --with-cc-opt="-Wimplicit-fallthrough=0"'
+    chdir: "/root/nginx-{{ nginx_version }}"
+  register: output_configure_nginx
+
+- name: make nginx
+  command:
+    cmd: make
+    chdir: "/root/nginx-{{ nginx_version }}"
+
+- name: make install nginx
+  command:
+    cmd: make install
+    chdir: "/root/nginx-{{ nginx_version }}"
+
+- name: copy template
+  template:
+    src: "nginx_config"
+    dest: "/usr/local/nginx/conf/nginx.conf"
+    mode: 0744
+    owner: root
+    group: root
+
+- name: Check nginx version
+  command: /usr/local/nginx/sbin/nginx -v
+  register: output_test_nginx
+
+- debug: msg={{ output_test_nginx }}
+
+- name: copy template
+  template:
+    src: "nginx.service"
+    dest: "/etc/systemd/system/nginx.service"
+    mode: 0744
+    owner: root
+    group: root
+
+- name: Start nginx service
+  service:
+    name: nginx.service
+    daemon_reload: yes
+    state: started
+    enabled: yes
+
+- name: setup stunnel4 file
+  template:
+    src: "stunnel/stunnel4"
+    dest: /etc/default/stunnel4
+    mode: 0764
+
+- name: setup stunnel.conf file
+  template:
+    src: "stunnel/stunnel.conf"
+    dest: /etc/stunnel/stunnel.conf
+    mode: 0764
+
+- name: setup stunnel dirs
+  file:
+    path: "/var/{{ item }}"
+    state: directory
+    mode: 0644
+  loop:
+    - run/stunnel/
+    - log/stunnel/
+
+- name: create log file
+  file:
+    path: /var/log/stunnel/stunnel.log
+    state: touch
+    mode: 0640
+
+- name: Start stunnel
+  service:
+    name: stunnel.service
+    state: started
+    enabled: yes
+  ignore_errors: True
+  register: output_start_stunnel
+
+- debug: var=output_start_stunnel
+
+- name: reset SE context
+  command: /sbin/restorecon -v /var/log/stunnel/stunnel.log
+
+- name: Allow stunnel for audit
+  shell: ausearch -c 'stunnel' --raw | audit2allow -M my-stunnel && semodule -X 300 -i my-stunnel.pp
+
+- name: Start stunnel
+  service:
+    name: stunnel.service
+    state: started
+    enabled: yes
+
+

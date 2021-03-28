@@ -1,0 +1,5 @@
+---
+# vars file for rtmp-setup
+
+nginx_version: 1.18.0
+nginx_url: https://nginx.org/download/nginx-

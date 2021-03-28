@@ -1,0 +1,6 @@
+---
+- name: Setup streaming server
+  hosts: stream-server
+  remote_user: root
+  roles:
+    - rtmp-setup

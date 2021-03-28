@@ -1,0 +1,27 @@
+---
+# defaults file for rtmp-setup
+
+list_of_packages:
+  - wget
+  - vim
+  - git
+  - make
+  - mlocate
+  - epel-release
+  - gcc
+  - pcre2-devel
+  - pcre
+  - pcre-devel
+  - openssl
+  - openssl-libs
+  - openssl-devel
+  - stunnel
+
+ffmpeg_url: https://raw.githubusercontent.com/q3aql/ffmpeg-install/master/ffmpeg-install
+
+
+# Nginx vars
+nginx_rtmp_module_url: https://github.com/mxintech/nginx-rtmp-module.git
+
+
+
